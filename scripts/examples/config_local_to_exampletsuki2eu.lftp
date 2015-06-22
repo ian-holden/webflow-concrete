@@ -1,0 +1,82 @@
+# sync from local to example tsuki2.eu server
+#
+# usage: lftp -f config_local_to_example.lftp
+#
+#rsync equiv:
+## exclude .log files
+#- *.log
+## include packages, blocks, tools and config
+#+ /packages/***
+#+ /blocks/***
+#+ /tools/***
+#+ /config/***
+## exclude everything else
+#=- *
+
+set ftp:list-options -a
+set cmd:fail-exit true
+
+
+#{ example tsuki2.eu --reverse mirror means copy from local to remote (using sftp)
+
+# for a host with your public key in .sss/authorized_keys, just use -u user, (just a comma at the end)
+# otherwise use -u user,password
+#
+
+# open the connection
+echo connecting to tsuki2.eu
+open -u tsuki2eu, sftp://ssh.tsuki2.eu
+
+
+echo cd to remote ~/public_html directory and local ../public_html
+
+# cd to the remote directory
+cd ~/public_html/
+
+# cd to the local directory
+lcd ../public_html
+
+
+
+# first time mirror everything to empty directory
+#echo mirror everything from local to remote...
+#mirror --reverse --verbose
+
+# first time mirror everything to empty directory - excluding cache and temp files
+#echo mirror everything except temp files from local to remote...
+#mirror --reverse --verbose -x files/(cache|temp|tmp|backups|trash)/
+
+
+# subsequent mirrors to existing directory structure with symlinks
+# the symlink directories must be excluded now to avoid errors
+
+# (this didn't really work): mirror --reverse --verbose --only-newer --delete -i '^(packages|blocks|tools|config)/' -x '\.log$'
+# do the directories one by one as it's much faster
+
+# packages
+echo mirror packages from local to remote...
+cd packages/
+lcd packages/
+mirror --reverse --verbose --only-newer --delete -x '\.log$'
+
+# blocks
+echo mirror blocks from local to remote...
+cd ../blocks/
+lcd ../blocks/
+mirror --reverse --verbose --only-newer --delete -x '\.log$'
+
+# tools
+echo mirror tools from local to remote...
+cd ../tools/
+lcd ../tools/
+mirror --reverse --verbose --only-newer --delete -x '\.log$'
+
+# config
+echo mirror config from local to remote...
+cd ../config/
+lcd ../config/
+mirror --reverse --verbose --only-newer --delete -x '\.log$'
+
+#} example tsuki2.eu
+
+quit

@@ -1,0 +1,21 @@
+/node_modules
+
+/secrets/*
+!/secrets/enc
+!/secrets/src/example-secrets.yaml
+
+/local.yaml
+
+/dist/*
+/temp/*
+
+# exclude build and project stuff
+/.buildpath
+/.project
+/.settings
+*.sublime*
+
+# exclude the .gitignore in the scripts folder, so our forks will be able to save their versions in their repos
+/scripts/.gitignore
+
+/public_html/application/languages

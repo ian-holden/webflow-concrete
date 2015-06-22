@@ -1,0 +1,57 @@
+---
+# a YAML file defining our various target configurations.
+# YAML is used rather than JSON because it is commentable and nice to read (use gulp make-new-theme ... to create a new theme )
+normal:
+
+    # the normal target is the default. All other targets override values from this default section
+
+    THEME: 'mytheme' # the name of your C5 theme folder. Also change the folder names. "mytheme" is the provided sample theme
+    WEBFLOW_FOLDER: 'sample' # where the webflow export is within the webflow folder. "sample" is the provided sample design
+    WEBFLOW_NAME: 'webflowconcrete' # name of the webflow site (used by webflow as the start of the main css file e.g. webflowconcrete.webflow.css)
+
+    SECRETS_VAR: 'repos_secret' # the name of the environment variable that contains your secrets key
+
+    COMPRESS_CSS:   false # set true to compress CSS. Normally only done for live production target
+    COMPRESS_JS:    false # set true to compress JavaScript. Normally only done for live production target
+
+
+    depend:
+
+        # a section for dependencies
+
+        c5:
+            # Concrete 5 dependency
+            VERSION: 'concrete_5.6.3.2' # the version of concrete5 to use from dependencies. This is the folder name.
+            BASE: 'web/concrete' # where, under the VERSION folder, to find the concrete folder
+            DEST: 'dist/public_html/concrete' # where this version of concrete5 should be located in the distribution
+
+    rsync:
+
+        # options for the rsync scripts
+        # other optons are in secrets.yaml
+
+        EXTRA_FLAGS_OUTGOING: '--copy-dirlinks' # extra flags for rsync from local e.g. '--copy-dirlinks --delete'
+        EXTRA_FLAGS_INCOMING: '' # extra flags for rsync to local e.g. '--copy-dirlinks --delete'
+
+
+
+# Override any of the normal settings needed for each target you need.
+# Use the same structure as above for each attribute setting you need to change.
+# local, staging, live are just examples of targets. use whatever target names you like.
+#
+# to build for a target e.g. live: gulp --target=live 
+
+compress:
+
+    COMPRESS_CSS:   true
+    COMPRESS_JS:    true
+
+local:
+
+staging:
+
+live:
+    COMPRESS_CSS:   true
+    COMPRESS_JS:    true
+
+...

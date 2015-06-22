@@ -1,0 +1,56 @@
+# sync from example live server to local
+#
+# usage: lftp -f config_example_to_local.lftp
+#
+#rsync equiv:
+## exclude the directories within /files that we don't need
+#- *.log
+#- /files/cache/***
+#- /files/temp/***
+#- /files/tmp/***
+#- /files/backups/***
+#- /files/trash/***
+## now indlude everything else in /files
+#+ /files/***
+## and exclude everything else
+#- *
+
+#{ example sftp://coombecaravanpark.co.uk mirror means copy from remote to local (no --reverse and using sftp)
+
+# for a host with your public key in .sss/authorized_keys, just use -u user, (just a comma at the end)
+# otherwise use -u user,password
+#
+
+# open the connection
+open -u u69497123, sftp://coombecaravanpark.co.uk
+
+# cd to the base remote directory
+cd ~/
+
+# cd to the base local directory
+lcd ../public_html
+
+
+
+# first time mirror everything to empty directory
+#mirror --verbose -x concrete -x concrete/ -x files/ -x logs/
+
+# first time mirror everything to empty directory - excluding cache and temp files
+#mirror --verbose -x files/(cache|temp|tmp|backups|trash)/ -x concrete -x concrete/
+
+
+# subsequent mirrors of only the CMS files to bring content up to date from remote server. Also need to copy the database separately
+
+# just the files directory
+cd files/
+lcd files/
+mirror --verbose --only-newer --delete -x '(cache|temp|tmp|backups|trash)/' -x '\.log$'
+
+
+
+
+#} example sftp://coombecaravanpark.co.uk
+
+
+
+quit

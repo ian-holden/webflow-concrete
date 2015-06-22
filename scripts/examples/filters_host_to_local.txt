@@ -1,0 +1,20 @@
+# exclude .log files
+- *.log
+- *.gz
+
+#######################################
+#{ normal sync only code changes and no files as these may have been updated on the live site via the CMS
+
+# include packages, blocks, tools and config
++ /packages/***
++ /blocks/***
++ /tools/***
++ /config/***
+
+# you may want to include _private depending on whether you need different versions of the scripts in there
++ /_private/***
+## exclude everything else
+- *
+
+#} normal sync
+#######################################

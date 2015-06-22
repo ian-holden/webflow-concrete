@@ -1,0 +1,50 @@
+# sync from example tsuki2.eu server to local
+#
+# usage: lftp -f config_example_to_local.lftp
+#
+#rsync equiv:
+## exclude the directories within /files that we don't need
+#- *.log
+#- /files/cache/***
+#- /files/temp/***
+#- /files/tmp/***
+#- /files/backups/***
+#- /files/trash/***
+## now indlude everything else in /files
+#+ /files/***
+## and exclude everything else
+#- *
+
+#{ example ssh.tsuki2.eu mirror means copy from remote to local (no --reverse and using sftp)
+
+# for a host with your public key in .sss/authorized_keys, just use -u user, (just a comma at the end)
+# otherwise use -u user,password
+#
+
+# open the connection
+open -u tsuki2eu, sftp://ssh.tsuki2.eu
+
+# cd to the base remote directory
+cd ~/public_html/
+
+# cd to the base local directory
+lcd ../public_html
+
+
+
+# first time mirror everything to empty directory
+#mirror --verbose
+
+
+# first time mirror everything to empty directory - excluding cache and temp files
+#mirror --verbose -x files/(cache|temp|tmp|backups|trash)/
+
+
+# subsequent mirrors of only the CMS files to bring content up to date from remote server. Also need to copy the database separately
+mirror --verbose --only-newer --delete -i '^files/' -x 'files/(cache|temp|tmp|ackups|trash)/' -x '\.log$'
+
+#} example ssh.tsuki2.eu
+
+
+
+quit

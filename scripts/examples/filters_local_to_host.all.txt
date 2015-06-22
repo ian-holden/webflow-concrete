@@ -1,0 +1,19 @@
+# exclude .log files
+- *.log
+- *.gz
+
+#######################################
+#{ first time sync everything important
+
+# exclude the directories within /files that we don't need
+- /files/cache/***
+- /files/temp/***
+- /files/tmp/***
+- /files/backups/***
+- /files/trash/***
+ 
+# now include everything else in /files
++ /files/***
+
+#} first time sync everything important
+#######################################

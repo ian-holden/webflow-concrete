@@ -1,0 +1,6 @@
+# ignore scripts we have in here, but allow only the examples to be in the repository
+# ONLY USE THIS AS A .gitignore ON THE MAIN (UPSTREAM) REPOS where we only want to provide the examples.
+# forked repositories used for sites based on igh-starter-c5-bootstrap will want their scripts in their repositories.
+/*.*
+!/examples/*.*
+!.gitignore_*

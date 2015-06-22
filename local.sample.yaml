@@ -1,0 +1,9 @@
+---
+# a YAML file defining our local environment.
+# this should be based on local.sample.yaml and not checked in to the repository
+
+# dependencies_path is the folder containing concrete5 versions
+dependencies_path: "../../dependencies/bower_components/" # with trailing /
+
+target: normal
+...
