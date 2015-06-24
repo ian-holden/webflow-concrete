@@ -1,7 +1,9 @@
 #!/usr/bin/perl -w
 use strict;
 use File::Basename;
-# backup one or two databases to ../../saved_content/databases. Ideally run this before each commit during development
+use File::Path qw(make_path);
+
+# backup one or two databases to ../../saved_content/databases/target. Ideally run this before each commit during development
 # 
 # this file is build into the dist folder and tokens are substituted for database credentilas taken form the current configured target
 # 
@@ -16,7 +18,7 @@ our $execute=1; # 0 to test, 1 to run
 my $mysqldump = '/usr/bin/mysqldump';
 my $mysqldump_ssh = 'mysqldump'; # where mysqldump is on ssh host (if used)
 our $dirname = dirname(__FILE__);
-my $save_backups_here = "$dirname/../../saved_content/databases";
+my $save_backups_here = "$dirname/../../saved_content/databases/{{BUILD_TARGET}}";
 
 
 
@@ -29,21 +31,28 @@ my $save_backups_here = "$dirname/../../saved_content/databases";
 my @database_credentials = (
 	{
 		# db1
-		use_ssh => '{{secrets.db.USE_SSH}}', db_host => '{{secrets.db.HOST}}', db_port => '{{secrets.db.PORT}}',
+		r_use_ssh => '{{secrets.db.remote.USE_SSH}}', r_use_ssh_port => '{{secrets.db.remote.USE_SSH_PORT}}',
+		r_db_host => '{{secrets.db.remote.HOST}}', r_db_port => '{{secrets.db.remote.PORT}}',
+
+		db_host => '{{secrets.db.HOST}}', db_port => '{{secrets.db.PORT}}',
 		db_name => '{{secrets.db.NAME}}', db_user => '{{secrets.db.USER}}', db_pass => '{{secrets.db.PASSWORD}}',
 	},
 	{
 		# db2
-		use_ssh => '{{secrets.db2.USE_SSH}}', db_host => '{{secrets.db2.HOST}}', db_port => '{{secrets.db2.PORT}}',
+		r_use_ssh => '{{secrets.db2.remote.USE_SSH}}', r_use_ssh_port => '{{secrets.db2.remote.USE_SSH_PORT}}',
+		r_db_host => '{{secrets.db2.remote.HOST}}', r_db_port => '{{secrets.db2.remote.PORT}}',
+
+		db_host => '{{secrets.db2.HOST}}', db_port => '{{secrets.db2.PORT}}',
 		db_name => '{{secrets.db2.NAME}}', db_user => '{{secrets.db2.USER}}', db_pass => '{{secrets.db2.PASSWORD}}',
 	},
 );
 
 foreach my $db (@database_credentials){
-	my $use_ssh = $db->{use_ssh} || '';
+	my $use_ssh = $db->{r_use_ssh} || '';
+	my $use_ssh_port = $db->{r_use_ssh_port} || '22';
 	my $db_name = $db->{db_name};
-	my $db_host = $db->{db_host} || '';
-	my $db_port = $db->{db_port} || '3306';
+	my $db_host = $db->{r_db_host} || $db->{db_host} || '';
+	my $db_port = $db->{r_db_port} || $db->{db_port} || '3306';
 	my $db_user = $db->{db_user};
 	my $db_pass = $db->{db_pass};
 
@@ -55,12 +64,14 @@ foreach my $db (@database_credentials){
 
 		my $db_backup = "db_${hostname}_${db_name}_backup.sql";
 
-		chmod(0600, "$save_backups_here/$db_backup") if (-e "$save_backups_here/$db_backup");
+		make_path($save_backups_here); # create the path needed if necessary
+		chmod(0600, "$save_backups_here/$db_backup") if (-e "$save_backups_here/$db_backup"); # allow us to overwrite an existing backup
+
 
 		my $cmd = "$mysqldump $db_host -u $db_user -p$db_pass --port=$db_port $db_name > \"$save_backups_here/$db_backup\"";
 
 		if($use_ssh ne ''){
-			$cmd = "ssh $use_ssh $mysqldump_ssh $db_host -u $db_user -p$db_pass --port=$db_port $db_name > \"$save_backups_here/$db_backup\""
+			$cmd = "ssh -p $use_ssh_port $use_ssh $mysqldump_ssh $db_host -u $db_user -p$db_pass --port=$db_port $db_name > \"$save_backups_here/$db_backup\""
 		}
 
 		my $xcmd = $cmd;

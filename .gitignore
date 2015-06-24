@@ -1,7 +1,7 @@
 /node_modules
 
-/secrets/*
-!/secrets/enc
+/secrets/use/**
+/secrets/src/**
 !/secrets/src/example-secrets.yaml
 
 /local.yaml

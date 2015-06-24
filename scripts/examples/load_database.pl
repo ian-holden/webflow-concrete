@@ -17,7 +17,13 @@ our $sql_file1 = shift || '';
 our $sql_file2 = shift || '';
 
 if($sql_file1 eq '') {
-	die "ERROR you must provide the sql filename of a file in ../../saved_content/databases\n";
+	die "ERROR you must provide one or two sql filenames of files in ../../saved_content/databases e.g. live/db_localhost_site_c5_wf_backup.sql\n";
+}
+if(! -e "../../saved_content/databases/$sql_file1"){
+	die "ERROR could not find file '../../saved_content/databases/$sql_file1'\n";
+}
+if($sql_file2 ne '' && ! -e "../../saved_content/databases/$sql_file2"){
+	die "ERROR could not find second file '../../saved_content/databases/$sql_file2'\n";
 }
 
 # these vars are updated by the cfg file:
@@ -34,27 +40,34 @@ my $save_backups_here = "$dirname/../../saved_content/databases";
 #
 # use_ssh to run the command via ssh and get the output (useful for 1&1 or other hosts we can ssh on to.
 # put the hostname & pw etc. into ~/.ssh/config)
-# 
+#
 my @database_credentials = (
 	{
 		# db1
-		use_ssh => '{{secrets.db.USE_SSH}}', db_host => '{{secrets.db.HOST}}', db_port => '{{secrets.db.PORT}}',
+		r_use_ssh => '{{secrets.db.remote.USE_SSH}}', r_use_ssh_port => '{{secrets.db.remote.USE_SSH_PORT}}',
+		r_db_host => '{{secrets.db.remote.HOST}}', r_db_port => '{{secrets.db.remote.PORT}}',
+
+		db_host => '{{secrets.db.HOST}}', db_port => '{{secrets.db.PORT}}',
 		db_name => '{{secrets.db.NAME}}', db_user => '{{secrets.db.USER}}', db_pass => '{{secrets.db.PASSWORD}}',
 		sql_file => $sql_file1,
 	},
 	{
 		# db2
-		use_ssh => '{{secrets.db2.USE_SSH}}', db_host => '{{secrets.db2.HOST}}', db_port => '{{secrets.db2.PORT}}',
+		r_use_ssh => '{{secrets.db2.remote.USE_SSH}}', r_use_ssh_port => '{{secrets.db2.remote.USE_SSH_PORT}}',
+		r_db_host => '{{secrets.db2.remote.HOST}}', r_db_port => '{{secrets.db2.remote.PORT}}',
+
+		db_host => '{{secrets.db2.HOST}}', db_port => '{{secrets.db2.PORT}}',
 		db_name => '{{secrets.db2.NAME}}', db_user => '{{secrets.db2.USER}}', db_pass => '{{secrets.db2.PASSWORD}}',
 		sql_file => $sql_file2,
 	},
 );
 
 foreach my $db (@database_credentials){
-	my $use_ssh = $db->{use_ssh} || '';
+	my $use_ssh = $db->{r_use_ssh} || '';
+	my $use_ssh_port = $db->{r_use_ssh_port} || '22';
 	my $db_name = $db->{db_name};
-	my $db_host = $db->{db_host} || '';
-	my $db_port = $db->{db_port} || '3306';
+	my $db_host = $db->{r_db_host} || $db->{db_host} || '';
+	my $db_port = $db->{r_db_port} || $db->{db_port} || '3306';
 	my $db_user = $db->{db_user};
 	my $db_pass = $db->{db_pass};
 	my $sql_file = $db->{sql_file};
@@ -66,13 +79,25 @@ foreach my $db (@database_credentials){
 		my $cmd = "$mysql $db_host -u $db_user -p$db_pass --port=$db_port $db_name -e \"source ../../saved_content/databases/$sql_file\"";
 
 		if($use_ssh ne ''){
-			$cmd = "ssh $use_ssh $mysql_ssh $db_host -u $db_user -p$db_pass --port=$db_port $db_name -e \"source ../../saved_content/databases/$sql_file\"";
+
+			# first copy the script to the host
+			$cmd = "scp -P $use_ssh_port \"../../saved_content/databases/$sql_file\" $use_ssh:temp_db_load_file.sql";
+			run($cmd);
+
+			# now run the script
+			$cmd = "ssh -p $use_ssh_port $use_ssh '$mysql_ssh $db_host -u $db_user -p$db_pass --port=$db_port $db_name -e \"source temp_db_load_file.sql\"'";
 		}
 
 		my $xcmd = $cmd;
 		$xcmd =~ s/p$db_pass/p********/g if $db_pass ne '';
 		
 		run($cmd, $xcmd);
+
+		if($use_ssh ne ''){
+			# now delete the file we copied (optional)
+			$cmd = "ssh -p $use_ssh_port $use_ssh 'rm temp_db_load_file.sql'";
+			run($cmd);
+		}
 
 	}
 }

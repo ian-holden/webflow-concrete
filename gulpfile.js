@@ -196,6 +196,13 @@ gulp.task('prep', function(done) {
     }
     theme_path = 'public_html/packages/theme_' + config.THEME + '/themes/' + config.THEME ;
     webflow_path = 'webflow/' + config.WEBFLOW_FOLDER;
+
+    // add BUILD_TARGET (target) to the config so some scripts can use it as a token
+    if (typeof config.BUILD_TARGET == "undefined") {
+        config.BUILD_TARGET = target;
+        gutil.log("BUILD_TARGET set to '" + target + "' as it is not in the config.");
+    }
+    gutil.log("config.BUILD_TARGET is '" + config.BUILD_TARGET + "'");
     done();
 });
 
