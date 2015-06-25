@@ -67,11 +67,19 @@ foreach my $db (@database_credentials){
 		make_path($save_backups_here); # create the path needed if necessary
 		chmod(0600, "$save_backups_here/$db_backup") if (-e "$save_backups_here/$db_backup"); # allow us to overwrite an existing backup
 
+		# create a cfg file with the password. this is more secure than passing the password in the command which may be exposed to people running a ps command
+		my $my_cnf_file = "$dirname/.my.cnf";
+		make_temp_my_cnf($my_cnf_file, $db_pass);
 
-		my $cmd = "$mysqldump $db_host -u $db_user -p$db_pass --port=$db_port $db_name > \"$save_backups_here/$db_backup\"";
+		my $cmd = "$mysqldump --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name > \"$save_backups_here/$db_backup\"";
 
 		if($use_ssh ne ''){
-			$cmd = "ssh -p $use_ssh_port $use_ssh $mysqldump_ssh $db_host -u $db_user -p$db_pass --port=$db_port $db_name > \"$save_backups_here/$db_backup\""
+			
+			# copy the .my.cnf file to the host
+			$cmd = "scp -P $use_ssh_port \"$my_cnf_file\" $use_ssh:.my.cnf";
+			run($cmd);
+
+			$cmd = "ssh -p $use_ssh_port $use_ssh $mysqldump_ssh --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name > \"$save_backups_here/$db_backup\"";
 		}
 
 		my $xcmd = $cmd;
@@ -79,11 +87,29 @@ foreach my $db (@database_credentials){
 		
 		run($cmd, $xcmd);
 
+		if($use_ssh ne ''){
+			# now delete the .my.cnf file we copied
+			$cmd = "ssh -p $use_ssh_port $use_ssh 'rm .my.cnf'";
+			run($cmd);
+		}
+
+		unlink $my_cnf_file; # remove the temp cfg file holding our password
+
 		chmod(0400, "$save_backups_here/$db_backup");
 	}
 }
 
 print get_timestamp() . " <<<<< Finished backup.\n\n";
+
+# create a cnf file containing just the mysql password
+sub make_temp_my_cnf{
+	my $file = shift;
+	my $pw = shift;
+	open CNF, ">$file" or die "Could not open cnf file to write '$file'\n";
+	print CNF "[client]\npassword=$pw\n";
+	close CNF;
+	chmod(0600, $file);
+}
 
 sub run{
 	my $cmd=shift;

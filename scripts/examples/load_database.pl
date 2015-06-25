@@ -76,7 +76,11 @@ foreach my $db (@database_credentials){
 		my $hostname = $db_host;
 		$db_host = '--host=' . $db_host if $db_host ne '';
 
-		my $cmd = "$mysql $db_host -u $db_user -p$db_pass --port=$db_port $db_name -e \"source ../../saved_content/databases/$sql_file\"";
+		# create a cfg file with the password. this is more secure than passing the password in the command which may be exposed to people running a ps command
+		my $my_cnf_file = "$dirname/.my.cnf";
+		make_temp_my_cnf($my_cnf_file, $db_pass);
+
+		my $cmd = "$mysql --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name -e \"source ../../saved_content/databases/$sql_file\"";
 
 		if($use_ssh ne ''){
 
@@ -84,8 +88,12 @@ foreach my $db (@database_credentials){
 			$cmd = "scp -P $use_ssh_port \"../../saved_content/databases/$sql_file\" $use_ssh:temp_db_load_file.sql";
 			run($cmd);
 
+			# now copy the .my.cnf file to the host
+			$cmd = "scp -P $use_ssh_port \"$my_cnf_file\" $use_ssh:.my.cnf";
+			run($cmd);
+
 			# now run the script
-			$cmd = "ssh -p $use_ssh_port $use_ssh '$mysql_ssh $db_host -u $db_user -p$db_pass --port=$db_port $db_name -e \"source temp_db_load_file.sql\"'";
+			$cmd = "ssh -p $use_ssh_port $use_ssh '$mysql_ssh --defaults-extra-file=\".my.cnf\" $db_host -u $db_user --port=$db_port $db_name -e \"source temp_db_load_file.sql\"'";
 		}
 
 		my $xcmd = $cmd;
@@ -94,15 +102,31 @@ foreach my $db (@database_credentials){
 		run($cmd, $xcmd);
 
 		if($use_ssh ne ''){
+			# now delete the .my.cnf file we copied
+			$cmd = "ssh -p $use_ssh_port $use_ssh 'rm .my.cnf'";
+			run($cmd);
+			
 			# now delete the file we copied (optional)
 			$cmd = "ssh -p $use_ssh_port $use_ssh 'rm temp_db_load_file.sql'";
 			run($cmd);
 		}
 
+		unlink $my_cnf_file; # remove the temp cfg file holding our password
+
 	}
 }
 
 print get_timestamp() . " <<<<< Finished load.\n\n";
+
+# create a cnf file containing just the mysql password
+sub make_temp_my_cnf{
+	my $file = shift;
+	my $pw = shift;
+	open CNF, ">$file" or die "Could not open cnf file to write '$file'\n";
+	print CNF "[client]\npassword=$pw\n";
+	close CNF;
+	chmod(0600, $file);
+}
 
 sub run{
 	my $cmd=shift;
