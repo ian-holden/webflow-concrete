@@ -41,8 +41,7 @@ var gutil = require('gulp-util');
 var minifyCSS = require('gulp-minify-css');
 var uglify = require('gulp-uglify');
 var file_include = require('gulp-file-include');
-var execSync = require("exec-sync");
-var shell = require('gulp-shell')
+var exec = require("sync-exec");
 var replace = require('gulp-replace');
 var changeCase = require('change-case')
 var merge_stream = require('merge-stream');
@@ -283,14 +282,21 @@ gulp.task('c5-link', function() {
 
 
 // copy over all webflow files
-// html files are analysed by a oython script and split into the parts neede for C5
+// html files are analysed by a python script and split into the parts neede for C5
 // the main css file is analysed and a script is created to handle dynamic images identified by names starting "c5glue-var-"
 // Gulp tasks corrcet paths to images and fonts to be suitable for Concrete5
 gulp.task('webflow-import', ['webflow-css', 'webflow-js', 'webflow-images', 'webflow-fonts'], function(done) {
     var cmd = 'python webflow_to_c5.py -t "' + config.THEME + '" -w "' + webflow_path + '" -n "' + config.WEBFLOW_NAME + '"';
     gutil.log(gutil.colors.bgYellow("running: " + cmd));
-    var result = execSync(cmd);
-    gutil.log(gutil.colors.yellow("\n" + result + "\n"));
+    var result = exec(cmd);
+    gutil.log(gutil.colors.yellow("\n" + result.stdout + "\n"));
+    if(result.stderr != ''){
+        gutil.log(gutil.colors.red("\n" + result.stderr + "\n"));
+    }
+    if(result.status != 0){
+        gutil.log(gutil.colors.red("\nERROR! python webflow_to_c5.py FAILED! Status code " + result.status + "\n"));
+        $error_count++;
+    }
     done();
 });
 
