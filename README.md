@@ -83,12 +83,16 @@ If you want to Change your secret key value, set the new key value, then copy `s
 
 ## Webflow Design
 
-Use webflow to design each page type you require in C5.
+There is a sample Webflow export included with the project in `webflow/sample`. 
+You can clone this site to edit in Webflow [here](https://webflow.com/website/webflowconcrete) to see how it is modified form the basic Slate theme.
+
+Use webflow to design each page type you require in C5. 
+
 Webflow page names are mapped to C5 page types as follows:
 
-home.html -> home.php (if no home.html exists, home.php is created from index.html)
-default.html -> default.php (if no default.html exists, default.php is created from index.html)
-page_ name.html -> page_name.php
+* home.html -> home.php (if no home.html exists, home.php is created from index.html)
+* default.html -> default.php (if no default.html exists, default.php is created from index.html)
+* page_ name.html -> page_name.php  
 _if no default.php or home.php could be created because the necessary html files did not exist, they are created from the first other html processed._
 
 **These special classes  must be used:**
@@ -230,4 +234,219 @@ The package includes a sample Webflow design based on the simple single page Sla
 ## Backup files and database using the scripts provided
 
 **TODO** see README.md in scripts folder
+
+
+# Usage Example
+
+This example is using Vagrant and the scotch box from [box.scotch.io](https://box.scotch.io/).
+
+Scotchbox provides a simple to use, known environment for trying out webflow-concrete. 
+
+You should be able to follow this example on your own system, but it should be fairly easy to adapt the
+process to your own development environment.
+
+## 1. create a folder for your project and clone webflow-concrete
+
+Follow the first three steps at https://box.scotch.io/ to get started. Clone scotch-box into the folder where you want it to be on your computer, but don't run `vagrant up` just yet.
+
+By default, the scotchbox vagrant config in `Vagrantfile` has your main project folder sync'd to /var/www so that the public folder is your default webroot.
+This is fine, but we also need to sync our webflow-concrete project into the box. We do this by adding
+
+`  config.vm.synced_folder "../webflow-concrete/", "/home/vagrant/projects/webflow-concrete", :mount_options => ["dmode=775", "fmode=664"]`
+
+to the `Vagrantfile` this assumes you will clone webflow-concrete into the `webflow-concrete` folder one below your vagrant project folder.
+
+Now we can fire up scotchbox and open a shell on it.
+
+```bash
+$ vagrant up
+$ vagrant ssh
+vagrant@scotchbox:~$
+```
+
+Make a folder to hold your projects and clone webflow-concrete5
+
+```bash
+vagrant@scotchbox:~$ mkdir projects
+vagrant@scotchbox:~$ cd projects
+vagrant@scotchbox:~/projects$ git clone https://github.com/ian-holden/webflow-concrete.git
+Cloning into 'webflow-concrete'...
+remote: Counting objects: 133, done.
+remote: Compressing objects: 100% (104/104), done.
+remote: Total 133 (delta 23), reused 126 (delta 16), pack-reused 0
+Receiving objects: 100% (133/133), 998.69 KiB | 1.47 MiB/s, done.
+Resolving deltas: 100% (23/23), done.
+vagrant@scotchbox:~/projects$ 
+```
+
+## 2. download concrete5 (version 5.6.3.3)
+
+```bash
+vagrant@scotchbox:~/projects$ wget http://www.concrete5.org/download_file/-/view/75930/8497 -O c5.6.3.3.zip
+--2015-06-26 11:52:18--  http://www.concrete5.org/download_file/-/view/75930/8497
+Resolving www.concrete5.org (www.concrete5.org)... 198.41.207.238, 198.41.206.238, 2400:cb00:2048:1::c629:ceee, ...
+Connecting to www.concrete5.org (www.concrete5.org)|198.41.207.238|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 19791371 (19M) [application/octet-stream]
+Saving to: `c5.6.3.3.zip'
+
+100%[==============================================================================>] 19,791,371   178K/s   in 63s     
+
+2015-06-26 11:53:22 (308 KB/s) - `c5.6.3.3.zip' saved [19791371/19791371]
+
+vagrant@scotchbox:~/projects$ unzip -q c5.6.3.3.zip
+vagrant@scotchbox:~/projects$ ll
+total 19344
+drwxrwxr-x  4 vagrant vagrant     4096 Jun 26 11:54 ./
+drwxr-xr-x 10 vagrant vagrant     4096 Jun 26 11:36 ../
+-rw-rw-r--  1 vagrant vagrant 19791371 Jun 26 11:53 c5.6.3.3.zip
+drwxr-xr-x 22 vagrant vagrant     4096 Feb 18 22:31 concrete5.6.3.3/
+drwxr-xr-x  9 vagrant vagrant     4096 Jun 26 11:39 webflow-concrete/
+vagrant@scotchbox:~/projects$ 
+```
+
+## 3. rename the current webroot and point to C5
+
+We replace the current webroot `/var/www/public` with a symbolic link to our downloaded concrete5 folder.
+Then add user vagrant to group www-data so apache can write to our folders allowing Concrete5 installation to be run.
+
+```bash
+vagrant@scotchbox:~/projects$ mv /var/www/public /var/www/public-orig
+vagrant@scotchbox:~/projects$ ln -s /home/vagrant/projects/concrete5.6.3.3 /var/www/public
+vagrant@scotchbox:~/projects$ sudo usermod -a -G www-data vagrant
+```
+
+## 4. add www-data to group vagrant and restart apache
+
+This allows the webserver to write to our folders
+
+```bash
+vagrant@scotchbox:~/projects$ sudo gpasswd -a www-data vagrant
+Adding user www-data to group vagrant
+vagrant@scotchbox:~/projects$ sudo service apache2 restart
+ * Restarting web server apache2                                                                                 [ OK ] 
+vagrant@scotchbox:~/projects$ 
+```
+
+## 5. Install C5
+
+In the browser on your host machine, go to `http://192.168.33.10/` and install the sample Concrete5 site
+Use database name `scotchbox`, host `127.0.0.1`, user `root`, password `root`
+
+
+## 6. Install any system dependencies
+
+Back in the Vagrant scotchbox shell, these system dependencies were needed in order to
+successfully run `sudo npm injstall` in the next step.  
+If you are not using scotchbox, you may not need all these.
+
+```bash
+vagrant@scotchbox:~/sudo apt-get install python-pip python-dev libxml2-dev libxslt-dev
+...
+vagrant@scotchbox:~/sudo pip install lxml
+...
+vagrant@scotchbox:~/sudo pip install cssutils
+...
+```
+
+## 7. Configure webflow-concrete
+
+### 7a. npm modules for gulp
+
+```bash
+vagrant@scotchbox:~/projects$ cd webflow-concrete/
+vagrant@scotchbox:~/projects/webflow-concrete$ npm install
+npm WARN optional dep failed, continuing fsevents@0.3.6
+...
+
+```
+
+### 7b. local.yaml
+
+`local.yaml` tells the build the default target to use, and where dependencies are located.
+Copy the sample file and edit it.
+
+`cp local.sample.yaml local.yaml`
+
+Edit and set `dependencies_path: "../"`
+
+### 7c. config.yaml
+
+`config.yaml` tells the build several things including which webflow export to use and what our concrete5 theme is named etc.
+For now we just need to say which version of concrete5 to use within out dependencied folder, and where within that the concrete folder is located.
+
+Edit `config.yaml` and set depend.c5.VERSION and BASE as follows:
+
+```yaml
+    depend:
+
+        # a section for dependencies
+
+        c5:
+            # Concrete 5 dependency
+            VERSION: 'concrete5.6.3.3'
+            # the version of concrete5 to use from dependencies. This is the folder name.
+            BASE: 'concrete' # where, under the VERSION folder, to find the concrete folder
+```
+
+
+### 7c. secrets
+
+`secrets.yaml` tells the build our secret information that is only pushed to the repositorty in encrypted form.
+The values get inserted into `config/site.php` and some other scripts.
+
+`cp secrets/src/example-secrets.yaml secrets/src/secrets.yaml`
+
+Edit and set our database credentials:
+
+```yaml
+normal:
+
+    # the normal target is the default. All other targets override values from this default section
+
+    db:
+        # the main database credentials. Used for Concrete5 config
+        NAME:     "scotchbox"
+        HOST:     "127.0.0.1"
+        USER:     "root"
+        PASSWORD: "root"
+
+```
+
+Now set your secrets key as an environment variable. The default variable name is `repos_secret`.
+
+`export repos_secret=anythingyoulikeforyourkey1234`
+
+And to make this permanent, add it to your `.bashrc` e.g.
+
+`echo "export repos_secret=anythingyoulikeforyourkey1234" >> ~/.bashrc`
+
+## 8. build
+
+`gulp`
+
+This should now build for the `normal` target and create the dist folder containing public_html.
+
+## 9. point your webroot at dist/public_html
+
+Now we can delete the symliink we set earlier to install C5 and create the database. Change the symlink to point
+at our build `dist/public_html`.
+
+```bash
+vagrant@scotchbox:~/projects/webflow-concrete$ unlink /var/www/public
+vagrant@scotchbox:~/projects/webflow-concrete$ ln -s /home/vagrant/projects/webflow-concrete/dist/public_html /var/www/public
+```
+
+## 10. Login to C5 and load the theme
+
+The default site will look broken because we have lost changed the installed files folder to our own.
+Login (index.php/login) as admin using th epassword you set at installation, and switch to our theme:
+
+dashboard > install > mytheme
+
+dashboard > themes > activate mytheme
+
+Now return to the website and you should see the slate theme, and any content in the "main" blocks.
+The blog page will not work because there is no blog page type yet.
+
 
