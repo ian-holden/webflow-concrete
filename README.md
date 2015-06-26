@@ -351,7 +351,7 @@ vagrant@scotchbox:~/sudo pip install cssutils
 
 ## 7. Configure webflow-concrete
 
-### 7a. npm modules for gulp
+**npm modules for gulp**
 
 ```bash
 vagrant@scotchbox:~/projects$ cd webflow-concrete/
@@ -361,7 +361,7 @@ npm WARN optional dep failed, continuing fsevents@0.3.6
 
 ```
 
-### 7b. local.yaml
+**local.yaml**
 
 `local.yaml` tells the build the default target to use, and where dependencies are located.
 Copy the sample file and edit it.
@@ -370,7 +370,7 @@ Copy the sample file and edit it.
 
 Edit and set `dependencies_path: "../"`
 
-### 7c. config.yaml
+**config.yaml**
 
 `config.yaml` tells the build several things including which webflow export to use and what our concrete5 theme is named etc.
 For now we just need to say which version of concrete5 to use within out dependencied folder, and where within that the concrete folder is located.
@@ -390,7 +390,7 @@ Edit `config.yaml` and set depend.c5.VERSION and BASE as follows:
 ```
 
 
-### 7c. secrets
+**secrets**
 
 `secrets.yaml` tells the build our secret information that is only pushed to the repositorty in encrypted form.
 The values get inserted into `config/site.php` and some other scripts.
