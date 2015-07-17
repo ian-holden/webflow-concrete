@@ -21,8 +21,8 @@ normal:
 
         c5:
             # Concrete 5 dependency
-            VERSION: 'concrete_5.6.3.2' # the version of concrete5 to use from dependencies. This is the folder name.
-            BASE: 'web/concrete' # where, under the VERSION folder, to find the concrete folder
+            VERSION: 'concrete_5.6.3.3' # the version of concrete5 to use from dependencies. This is the folder name.
+            BASE: 'concrete' # where, under the VERSION folder, to find the concrete folder
             DEST: 'dist/public_html/concrete' # where this version of concrete5 should be located in the distribution
 
     rsync:
@@ -30,7 +30,7 @@ normal:
         # options for the rsync scripts
         # other optons are in secrets.yaml
 
-        EXTRA_FLAGS_OUTGOING: '--copy-dirlinks' # extra flags for rsync from local e.g. '--copy-dirlinks --delete'
+        EXTRA_FLAGS_OUTGOING: '--links' # extra flags for rsync from local e.g. '--copy-dirlinks --delete'
         EXTRA_FLAGS_INCOMING: '' # extra flags for rsync to local e.g. '--copy-dirlinks --delete'
 
 

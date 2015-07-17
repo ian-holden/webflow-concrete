@@ -35,7 +35,7 @@ var mkdirp = require('mkdirp');
 var gulpFilter = require('gulp-filter');
 //var less = require('gulp-less');
 var concat = require('gulp-concat');
-var symlink = require('gulp-sym');
+var symlink = require('gulp-symlink');
 var merge = require('merge');
 var gutil = require('gulp-util');
 var minifyCSS = require('gulp-minify-css');
@@ -273,8 +273,9 @@ gulp.task('clean-dist',['prep'], function(cb) {
 gulp.task('c5-link', function() {
     var SRC = local.dependencies_path + config.depend.c5.VERSION + '/' + config.depend.c5.BASE;
     var DEST = config.depend.c5.DEST;
-    //gutil.log("c5l SRC: '"+SRC+"'");
-    //gutil.log("c5l DEST: '"+DEST+"'");
+    gutil.log("c5l SRC: '"+SRC+"'");
+    gutil.log("c5l DEST: '"+DEST+"'");
+    del.sync(DEST);
     gulp
         .src(SRC)
         .pipe(symlink(DEST,{force: true}));
@@ -282,7 +283,7 @@ gulp.task('c5-link', function() {
 
 
 // copy over all webflow files
-// html files are analysed by a python script and split into the parts neede for C5
+// html files are analysed by a python script and split into the parts needed for C5
 // the main css file is analysed and a script is created to handle dynamic images identified by names starting "c5glue-var-"
 // Gulp tasks corrcet paths to images and fonts to be suitable for Concrete5
 gulp.task('webflow-import', ['webflow-css', 'webflow-js', 'webflow-images', 'webflow-fonts'], function(done) {
@@ -295,10 +296,11 @@ gulp.task('webflow-import', ['webflow-css', 'webflow-js', 'webflow-images', 'web
     }
     if(result.status != 0){
         gutil.log(gutil.colors.red("\nERROR! python webflow_to_c5.py FAILED! Status code " + result.status + "\n"));
-        $error_count++;
+        error_count++;
     }
     done();
 });
+
 
 gulp.task('webflow-css', function(){
   var DEST = 'dist/' + theme_path + '/css';
@@ -357,13 +359,14 @@ gulp.task('webflow-js', function(){
 // this is done in the dist folder structure
 gulp.task('templates', ['templates-main'], function(done){
   // delete the .tmpl. and .inc. files not needed after the template processing
-  var SRC = ['dist/public_html/packages/**/*.tmpl.php','dist/public_html/packages/**/*.inc.php'];
+  var SRC = ['dist/public_html/packages/theme_' + config.THEME + '/**/*.tmpl.php',
+    'dist/public_html/packages/theme_' + config.THEME + '/**/*.inc.php'];
   del(SRC,done);
 });
 
 gulp.task('templates-main', ['duplicate-inc-in-elements', 'base-files','webflow-import'], function(){
 
-  var SRC = ['dist/public_html/packages/**/*.tmpl.php'];
+  var SRC = ['dist/public_html/packages/theme_' + config.THEME + '/**/*.tmpl.php'];
   var DEST = './';
   return gulp.src(SRC, {base: './'})
   .pipe(file_include({

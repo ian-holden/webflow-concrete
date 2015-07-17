@@ -49,7 +49,7 @@ Of course, a webserver e.g. Apache2 and a MySQL database are needed as usual for
 * gulp
 
 To create a new theme folder structure:
-`gulp make-new-theme --theme="SomeThemeName" --description="Brief theme description"`
+`gulp make-new-theme --themename="SomeThemeName" --description="Brief theme description"`
 
 * TODO explain how to setup the concrete5 dependency better
 * TODO explain the config  better

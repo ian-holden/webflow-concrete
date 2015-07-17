@@ -229,7 +229,11 @@ def process_html_file(filename, name):
 
     # process the head. extract just the google fonts code if there is any, and place this in the head inc
     m3 = re.search(r"<script[^\<]+webfont[^\<]+</script>\s*<script>[^\<]+WebFont\.load[^\<]+</script>", html, re.MULTILINE)
-    c5head = m3.group(0);
+    if(m3):
+        c5head = m3.group(0);
+    else:
+        c5head = "<!-- no webflow fonts code needed -->\n"
+    
     hfile = open_for_write(theme_path + '/elements/headfonts-' + name + '.inc.php')
     hfile.write(correct_links_for_c5(c5head))
     hfile.close()
