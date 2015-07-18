@@ -27,14 +27,6 @@ DEST="{{secrets.ssh.HOST}}"
 
 # ssh shell option with port if provided
 PORT="{{secrets.ssh.PORT}}"
-if [[ -z "$PORT" ]]; then
-    OPTS+=('--rsh=ssh')
-    #SSH="-e ssh"
-else
-    OPTS+=("--rsh=ssh -p$PORT")
-    #SSH="--rsh=\"ssh -p$PORT\""
-    #SSH="-e \"ssh -p $PORT\""
-fi
 
 # User that rsync will connect as
 # Are you sure that you want to run as root, though?
@@ -45,6 +37,13 @@ BACKDIR="{{secrets.ssh.LOCALDIR}}"
 
 # Directory to copy to on the destination machine.
 DESTDIR="{{secrets.ssh.HOSTDIR}}"
+
+
+if [[ -z "$PORT" ]]; then
+    OPTS+=('--rsh=ssh')
+else
+    OPTS+=("--rsh=ssh -p$PORT")
+fi
 
 # filters file - Contains wildcard patterns of files to include.
 # You must create this file.
@@ -125,7 +124,6 @@ if [ $VAR -eq 0 ]; then
     echo rsync "${RSYNCOPTS[@]}" "$BACKDIR" "$USER@$DEST:$DESTDIR"
     echo "========================="
     rsync "${RSYNCOPTS[@]}" "$BACKDIR" "$USER@$DEST:$DESTDIR"
-    #rsync "$SSH" $OPTS --filter=". $FILTERS" $BACKDIR $USER@$DEST:$DESTDIR
 else
     echo "Cannot ping $DEST."
 fi
