@@ -5,11 +5,11 @@ use File::Basename;
 # 
 # this file is built into the dist folder and tokens are substituted for database credentilas taken form the current configured target
 # 
-# usage ./load_database.pl filename1.sql [filename2.sql]
-# or perl load_database.pl filename1.sql [filename2.sql]
+# usage ./load_database.pl filename1.sql [filename2.sql.gz]
+# or perl load_database.pl filename1.sql [filename2.sql.gz]
 # 
-# filename1.sql is the filename of the sql dump in ../../saved_content/databases to be loaded into db1
-# filename2.sql is optional and used for a 2nd database if one is configured for your current target
+# filename1.sql.gz is the filename of the sql dump in ../../saved_content/databases to be loaded into db1
+# filename2.sql.gz is optional and used for a 2nd database if one is configured for your current target
 
 our $debug=0; # set 1 to log more info for debugging
 
@@ -40,7 +40,7 @@ my $save_backups_here = "$dirname/../../saved_content/databases";
 #
 # use_ssh to run the command via ssh and get the output (useful for 1&1 or other hosts we can ssh on to.
 # put the hostname & pw etc. into ~/.ssh/config)
-#
+# 
 my @database_credentials = (
 	{
 		# db1
@@ -85,7 +85,7 @@ foreach my $db (@database_credentials){
 		if($use_ssh ne ''){
 
 			# first copy the script to the host
-			$cmd = "scp -P $use_ssh_port \"../../saved_content/databases/$sql_file\" $use_ssh:temp_db_load_file.sql";
+			$cmd = "scp -P $use_ssh_port \"../../saved_content/databases/$sql_file\" $use_ssh:temp_db_load_file.sql.gz";
 			run($cmd);
 
 			# now copy the .my.cnf file to the host
@@ -93,7 +93,7 @@ foreach my $db (@database_credentials){
 			run($cmd);
 
 			# now run the script
-			$cmd = "ssh -p $use_ssh_port $use_ssh '$mysql_ssh --defaults-extra-file=\".my.cnf\" $db_host -u $db_user --port=$db_port $db_name -e \"source temp_db_load_file.sql\"'";
+			$cmd = "ssh -p $use_ssh_port $use_ssh 'zcat \"temp_db_load_file.sql.gz\" | $mysql_ssh --defaults-extra-file=\".my.cnf\" $db_host -u $db_user --port=$db_port $db_name '";
 		}
 
 		my $xcmd = $cmd;
@@ -107,7 +107,7 @@ foreach my $db (@database_credentials){
 			run($cmd);
 			
 			# now delete the file we copied (optional)
-			$cmd = "ssh -p $use_ssh_port $use_ssh 'rm temp_db_load_file.sql'";
+			$cmd = "ssh -p $use_ssh_port $use_ssh 'rm temp_db_load_file.sql.gz'";
 			run($cmd);
 		}
 
