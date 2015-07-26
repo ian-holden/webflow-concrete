@@ -18,8 +18,8 @@ LOCALDIR="../../saved_content/sites/$BUILD_TARGET"
 # make sure the local folder exists
 mkdir -p $LOCALDIR
 
-echo "RUNNING: ssh -p $PORT $USER@$HOST \"tar -czf - -C \\\"$HOSTDIR\\\" .\" > \"$LOCALDIR/site.tar.gz\""
+echo "RUNNING: ssh -p $PORT $USER@$HOST \"tar -czf - --exclude=\\\"files/tmp\\\"  --exclude=\\\"concrete\\\" --exclude=\\\"_private\\\"  -C \\\"$HOSTDIR\\\" .\" > \"$LOCALDIR/site.tar.gz\""
 
-ssh -p $PORT $USER@$HOST "tar -czf - -C \"$HOSTDIR\" ." > "$LOCALDIR/site.tar.gz"
+ssh -p $PORT $USER@$HOST "tar -czf - --exclude=\"files/tmp\" --exclude=\"concrete\"  --exclude=\"_private\" -C \"$HOSTDIR\" ." > "$LOCALDIR/site.tar.gz"
 
 echo "saved."

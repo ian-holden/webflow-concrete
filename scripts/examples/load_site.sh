@@ -26,9 +26,20 @@ HOSTDIR="{{secrets.ssh.HOSTDIR}}"
 LOCALFILE="../../saved_content/sites/$1"
 
 
+
 # 
-echo "RUNNING: cat \"$LOCALFILE\" | ssh -p $PORT $USER@$HOST \"tar -xzf - -C \\\"$HOSTDIR\\\""
+echo "--------------------------------------------------------------------"
+echo "loading site target '{{BUILD_TARGET}}' from archive '$LOCALFILE' ..."
+echo "."
+echo "WILL RUN: cat \"$LOCALFILE\" | ssh -p $PORT $USER@$HOST \"tar -xzf - -C \\\"$HOSTDIR\\\""
+echo "--------------------------------------------------------------------"
 
-cat "$LOCALFILE" | ssh -p $PORT $USER@$HOST "tar -xzf - -C \"$HOSTDIR\""
+read -p "Are you sure? " -n 1 -r
+echo    # (optional) move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    
+    cat "$LOCALFILE" | ssh -p $PORT $USER@$HOST "tar -xzf - -C \"$HOSTDIR\""
+    echo "loaded."
 
-echo "loaded."
+fi
