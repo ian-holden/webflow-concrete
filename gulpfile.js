@@ -48,6 +48,7 @@ var merge_stream = require('merge-stream');
 var watch = require('gulp-watch');
 var plumber = require('gulp-plumber');
 var batch = require('gulp-batch');
+var concat = require('gulp-concat');
 
 // for extract_typography (webflow only):
 var rework = require('rework'),
@@ -628,9 +629,8 @@ gulp.task('c5-make-root-empty-folders', function(){
 });
 
 
-
 // rename all css files in css folder to -src.css
-gulp.task('rename-src-css',['extract-typography', 'base-files'], function(){
+gulp.task('rename-src-css',['concat-main-css', 'base-files'], function(){
     var css_path = 'dist/public_html/packages/theme_' + config.THEME + '/themes/' + config.THEME + '/css';
     var wf_css = [css_path+'/webflow.css', css_path+'/normalize.css'];
     // now just the files to -src.css
@@ -659,6 +659,25 @@ gulp.task('rename-src-js',['base-files'], function(){
     //.pipe(debug({title: "rename-src-js to:"}))
     .pipe(gulp.dest(js_path))
 
+});
+
+
+// concatenate main-overrides with main-src.css
+gulp.task('concat-main-css',['concat-typography-css'], function() {
+
+  var DEST = 'dist/' + theme_path;
+  return gulp.src([DEST + '/main-src.css', theme_path + '/css/main-overrides.css'])
+    .pipe(concat('main-src.css'))
+    .pipe(gulp.dest(DEST));
+});
+
+// concatenate typography-overrides with main-src.css
+gulp.task('concat-typography-css',['extract-typography'], function() {
+
+  var DEST = 'dist/' + theme_path;
+  return gulp.src([DEST + '/typography-src.css', theme_path + '/css/typography-overrides.css'])
+    .pipe(concat('typography-src.css'))
+    .pipe(gulp.dest(DEST));
 });
 
 
@@ -692,7 +711,7 @@ gulp.task('extract-typography',['webflow-css','base-files'], function(){
 // compress our stylesheets for production into into main.css and typography.css
 // also do the webflow css files in css folder
 // in dev mode, these are simple copies of main-src and typography-src
-gulp.task('compress-css', ['extract-typography', 'rename-src-css'], function(){
+gulp.task('compress-css', ['concat-main-css', 'rename-src-css'], function(){
     var theme_path = 'dist/public_html/packages/theme_' + config.THEME + '/themes/' + config.THEME;
     var css_files = [theme_path + '/main-src.css',
     theme_path + '/typography-src.css',

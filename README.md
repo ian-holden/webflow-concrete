@@ -150,6 +150,8 @@ Css files are copied into your theme css folder and all image links to `../image
 
 The `themename.webflow.css` file is processed to extract the `typography.css` file needed for C5 content editing.
 
+To **override Webflow CSS** add CSS to the files `main-overrides.css` and/or `typography-overrides.css` in the `themes/themename/css` folder
+
 ### JS
 All js files are copied to your themes js folder
 
@@ -351,7 +353,7 @@ vagrant@scotchbox:~/sudo pip install cssutils
 
 ## 7. Configure webflow-concrete
 
-**npm modules for gulp**
+### 7a. npm modules for gulp
 
 ```bash
 vagrant@scotchbox:~/projects$ cd webflow-concrete/
@@ -361,7 +363,7 @@ npm WARN optional dep failed, continuing fsevents@0.3.6
 
 ```
 
-**local.yaml**
+### 7b. local.yaml
 
 `local.yaml` tells the build the default target to use, and where dependencies are located.
 Copy the sample file and edit it.
@@ -370,7 +372,7 @@ Copy the sample file and edit it.
 
 Edit and set `dependencies_path: "../"`
 
-**config.yaml**
+### 7c. config.yaml
 
 `config.yaml` tells the build several things including which webflow export to use and what our concrete5 theme is named etc.
 For now we just need to say which version of concrete5 to use within out dependencied folder, and where within that the concrete folder is located.
@@ -390,7 +392,7 @@ Edit `config.yaml` and set depend.c5.VERSION and BASE as follows:
 ```
 
 
-**secrets**
+### 7c. secrets
 
 `secrets.yaml` tells the build our secret information that is only pushed to the repositorty in encrypted form.
 The values get inserted into `config/site.php` and some other scripts.
