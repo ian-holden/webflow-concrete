@@ -1,6 +1,6 @@
-#Webflow-Concrete
+# Webflow-Concrete
 
-Webflow-Concrete It is a complete build, development and deployment system for websites designed in Webflow that use Concrete5 for content management.
+Webflow-Concrete is a complete build, development and deployment system for websites designed in Webflow that use Concrete5 for content management.
 
 Webflow-Concrete is the "glue" that joins Webflow to Concrete5 and keeps them connected. It allow designers to create the site design and continue to maintain it using Webflow. Developers can implement any special technical back end requirements using the Concrete5 framework. The client or site editor can manage the site content using the Concrete5 CMS admin. 
 

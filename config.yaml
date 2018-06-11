@@ -5,6 +5,27 @@ normal:
 
     # the normal target is the default. All other targets override values from this default section
 
+
+    info:
+        name: webflow-concrete
+        descr: a complete build, development and deployment system for websites designed in Webflow that use Concrete5 for content management.
+        group: ih
+        repos: https://github.com/ian-holden/webflow-concrete.git
+        cms: C5
+        domains:
+            - n/a
+        registrar: n/a
+        dns: n/a
+        hosting: n/a
+        staging: n/a
+        projtype: gulp
+        notes: |
+            Webflow-Concrete is the "glue" that joins Webflow to Concrete5 and keeps them connected.
+            It allow designers to create the site design and continue to maintain it using Webflow.
+            Developers can implement any special technical back end requirements using the Concrete5 framework.
+            The client or site editor can manage the site content using the Concrete5 CMS admin.
+
+
     THEME: 'mytheme' # the name of your C5 theme folder. Also change the folder names. "mytheme" is the provided sample theme
     WEBFLOW_FOLDER: 'sample' # where the webflow export is within the webflow folder. "sample" is the provided sample design
     WEBFLOW_NAME: 'webflowconcrete' # name of the webflow site (used by webflow as the start of the main css file e.g. webflowconcrete.webflow.css)
@@ -21,8 +42,8 @@ normal:
 
         c5:
             # Concrete 5 dependency
-            VERSION: 'concrete_5.6.3.2' # the version of concrete5 to use from dependencies. This is the folder name.
-            BASE: 'web/concrete' # where, under the VERSION folder, to find the concrete folder
+            VERSION: 'concrete5.6.3.3' # the version of concrete5 to use from dependencies. This is the folder name.
+            BASE: 'concrete' # where, under the VERSION folder, to find the concrete folder
             DEST: 'dist/public_html/concrete' # where this version of concrete5 should be located in the distribution
 
     rsync:
