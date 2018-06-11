@@ -10,6 +10,7 @@
 + /blocks/***
 + /tools/***
 + /config/***
++ /concrete
 
 # you may want to include _private depending on whether you need different versions of the scripts in there
 + /_private/***

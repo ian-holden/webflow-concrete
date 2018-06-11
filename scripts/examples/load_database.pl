@@ -5,11 +5,11 @@ use File::Basename;
 # 
 # this file is built into the dist folder and tokens are substituted for database credentilas taken form the current configured target
 # 
-# usage ./load_database.pl filename1.sql [filename2.sql]
-# or perl load_database.pl filename1.sql [filename2.sql]
+# usage ./load_database.pl filename1.sql [filename2.sql.gz]
+# or perl load_database.pl filename1.sql [filename2.sql.gz]
 # 
-# filename1.sql is the filename of the sql dump in ../../saved_content/databases to be loaded into db1
-# filename2.sql is optional and used for a 2nd database if one is configured for your current target
+# filename1.sql.gz is the filename of the sql dump in ../../saved_content/databases to be loaded into db1
+# filename2.sql.gz is optional and used for a 2nd database if one is configured for your current target
 
 our $debug=0; # set 1 to log more info for debugging
 
@@ -40,7 +40,7 @@ my $save_backups_here = "$dirname/../../saved_content/databases";
 #
 # use_ssh to run the command via ssh and get the output (useful for 1&1 or other hosts we can ssh on to.
 # put the hostname & pw etc. into ~/.ssh/config)
-#
+# 
 my @database_credentials = (
 	{
 		# db1
@@ -62,6 +62,7 @@ my @database_credentials = (
 	},
 );
 
+
 foreach my $db (@database_credentials){
 	my $use_ssh = $db->{r_use_ssh} || '';
 	my $use_ssh_port = $db->{r_use_ssh_port} || '22';
@@ -73,46 +74,58 @@ foreach my $db (@database_credentials){
 	my $sql_file = $db->{sql_file};
 
 	if($db_name ne ''){ # ignore unnamed databases, our config allows for up to 2 and one will probably be empty
-		my $hostname = $db_host;
-		$db_host = '--host=' . $db_host if $db_host ne '';
 
-		# create a cfg file with the password. this is more secure than passing the password in the command which may be exposed to people running a ps command
-		my $my_cnf_file = "$dirname/.my.cnf";
-		make_temp_my_cnf($my_cnf_file, $db_pass);
 
-		my $cmd = "$mysql --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name -e \"source ../../saved_content/databases/$sql_file\"";
+		print "------------------------------------------------------------------\n";
+		print "Will load database $db_name on $db_host from $sql_file.\n";
+		print "Are you sure? (y or Y to continue)\n";
+		my $answer = <>;
+		chomp $answer;
+		if(uc $answer eq 'Y'){
 
-		if($use_ssh ne ''){
+			my $hostname = $db_host;
+			$db_host = '--host=' . $db_host if $db_host ne '';
 
-			# first copy the script to the host
-			$cmd = "scp -P $use_ssh_port \"../../saved_content/databases/$sql_file\" $use_ssh:temp_db_load_file.sql";
-			run($cmd);
+			# create a cfg file with the password. this is more secure than passing the password in the command which may be exposed to people running a ps command
+			my $my_cnf_file = "$dirname/.my.cnf";
+			make_temp_my_cnf($my_cnf_file, $db_pass);
 
-			# now copy the .my.cnf file to the host
-			$cmd = "scp -P $use_ssh_port \"$my_cnf_file\" $use_ssh:.my.cnf";
-			run($cmd);
+			my $cmd = "zcat  \"../../saved_content/databases/$sql_file\" | $mysql --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name";
 
-			# now run the script
-			$cmd = "ssh -p $use_ssh_port $use_ssh '$mysql_ssh --defaults-extra-file=\".my.cnf\" $db_host -u $db_user --port=$db_port $db_name -e \"source temp_db_load_file.sql\"'";
-		}
+			if($use_ssh ne ''){
 
-		my $xcmd = $cmd;
-		$xcmd =~ s/p$db_pass/p********/g if $db_pass ne '';
-		
-		run($cmd, $xcmd);
+				# first copy the script to the host
+				$cmd = "scp -P $use_ssh_port \"../../saved_content/databases/$sql_file\" $use_ssh:temp_db_load_file.sql.gz";
+				run($cmd);
 
-		if($use_ssh ne ''){
-			# now delete the .my.cnf file we copied
-			$cmd = "ssh -p $use_ssh_port $use_ssh 'rm .my.cnf'";
-			run($cmd);
+				# now copy the .my.cnf file to the host
+				$cmd = "scp -P $use_ssh_port \"$my_cnf_file\" $use_ssh:.my.cnf";
+				run($cmd);
+
+				# now run the script
+				$cmd = "ssh -p $use_ssh_port $use_ssh 'zcat \"temp_db_load_file.sql.gz\" | $mysql_ssh --defaults-extra-file=\".my.cnf\" $db_host -u $db_user --port=$db_port $db_name '";
+			}
+
+			my $xcmd = $cmd;
+			$xcmd =~ s/p$db_pass/p********/g if $db_pass ne '';
 			
-			# now delete the file we copied (optional)
-			$cmd = "ssh -p $use_ssh_port $use_ssh 'rm temp_db_load_file.sql'";
-			run($cmd);
+			run($cmd, $xcmd);
+
+			if($use_ssh ne ''){
+				# now delete the .my.cnf file we copied
+				$cmd = "ssh -p $use_ssh_port $use_ssh 'rm .my.cnf'";
+				run($cmd);
+				
+				# now delete the file we copied (optional)
+				$cmd = "ssh -p $use_ssh_port $use_ssh 'rm temp_db_load_file.sql.gz'";
+				run($cmd);
+			}
+
+			unlink $my_cnf_file; # remove the temp cfg file holding our password
+
 		}
-
-		unlink $my_cnf_file; # remove the temp cfg file holding our password
-
+	}else{
+		print "skipped.\n";
 	}
 }
 

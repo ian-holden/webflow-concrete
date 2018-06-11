@@ -61,9 +61,16 @@ def get_and_remove_block(c5name):
 
     return block_str
 
-# change src="images/" to src="<?php echo $this->getThemePath()?>/images/
+# handle special php var image names, and change src="images/" to src="<?php echo $this->getThemePath()?>/images/
 def correct_links_for_c5(wf_html):
-    c5_php = re.sub(r'src="images/', 'src="<?php echo $this->getThemePath()?>/images/', wf_html, flags=re.IGNORECASE)
+    # first change any special image names to us the php variable
+    # c5glue-var-xxxx.jpg => <?php echo ($xxxx ? $xxxx : 'images/c5glue-var-xxxx.jpg');?>
+    c5_php = re.sub(
+        r'src="images/c5glue-var-(\w+)\.(\w+)',
+        r'''src="<?php echo ($\1 ? $\1 : $this->getThemePath() . '/images/c5glue-var-\1.\2');?>''',
+        wf_html, flags=re.IGNORECASE)
+    # now change the paths to any normal images
+    c5_php = re.sub(r'src="images/', 'src="<?php echo $this->getThemePath()?>/images/', c5_php, flags=re.IGNORECASE)
     return c5_php
 
 
@@ -229,7 +236,11 @@ def process_html_file(filename, name):
 
     # process the head. extract just the google fonts code if there is any, and place this in the head inc
     m3 = re.search(r"<script[^\<]+webfont[^\<]+</script>\s*<script>[^\<]+WebFont\.load[^\<]+</script>", html, re.MULTILINE)
-    c5head = m3.group(0);
+    if(m3):
+        c5head = m3.group(0);
+    else:
+        c5head = "<!-- no webflow fonts code needed -->\n"
+    
     hfile = open_for_write(theme_path + '/elements/headfonts-' + name + '.inc.php')
     hfile.write(correct_links_for_c5(c5head))
     hfile.close()

@@ -62,7 +62,7 @@ foreach my $db (@database_credentials){
 		
 		print get_timestamp() . " backing up database $db_name\n";
 
-		my $db_backup = "db_${hostname}_${db_name}_backup.sql";
+		my $db_backup = "db_${hostname}_${db_name}_backup.sql.gz";
 
 		make_path($save_backups_here); # create the path needed if necessary
 		chmod(0600, "$save_backups_here/$db_backup") if (-e "$save_backups_here/$db_backup"); # allow us to overwrite an existing backup
@@ -71,7 +71,7 @@ foreach my $db (@database_credentials){
 		my $my_cnf_file = "$dirname/.my.cnf";
 		make_temp_my_cnf($my_cnf_file, $db_pass);
 
-		my $cmd = "$mysqldump --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name > \"$save_backups_here/$db_backup\"";
+		my $cmd = "$mysqldump --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name | gzip > \"$save_backups_here/$db_backup\"";
 
 		if($use_ssh ne ''){
 			
@@ -79,7 +79,7 @@ foreach my $db (@database_credentials){
 			$cmd = "scp -P $use_ssh_port \"$my_cnf_file\" $use_ssh:.my.cnf";
 			run($cmd);
 
-			$cmd = "ssh -p $use_ssh_port $use_ssh $mysqldump_ssh --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name > \"$save_backups_here/$db_backup\"";
+			$cmd = "ssh -p $use_ssh_port $use_ssh $mysqldump_ssh --defaults-extra-file=\"$my_cnf_file\" $db_host -u $db_user --port=$db_port $db_name | gzip > \"$save_backups_here/$db_backup\"";
 		}
 
 		my $xcmd = $cmd;

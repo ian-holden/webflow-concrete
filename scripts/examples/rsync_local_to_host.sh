@@ -20,9 +20,13 @@ OPTIONS:
 EOF
 }
 
+OPTS=() # array of options (must be an array to handle --filter snd --rsh options correctly)
 
 # Destination host machine name
 DEST="{{secrets.ssh.HOST}}"
+
+# ssh shell option with port if provided
+PORT="{{secrets.ssh.PORT}}"
 
 # User that rsync will connect as
 # Are you sure that you want to run as root, though?
@@ -34,7 +38,12 @@ BACKDIR="{{secrets.ssh.LOCALDIR}}"
 # Directory to copy to on the destination machine.
 DESTDIR="{{secrets.ssh.HOSTDIR}}"
 
-EXTRA_FLAGS_OUTGOING = "{{rsync.EXTRA_FLAGS_OUTGOING}}"
+
+if [[ -z "$PORT" ]]; then
+    OPTS+=('--rsh=ssh')
+else
+    OPTS+=("--rsh=ssh -p$PORT")
+fi
 
 # filters file - Contains wildcard patterns of files to include.
 # You must create this file.
@@ -42,7 +51,9 @@ FILTER_BASE=filters_local_to_host
 
 INFO_MSG="DRY-RUN. Use -c option to do the copy"
 
-ARGOPTS='-n' # dry-run default
+
+RSYNCOPTS=("${OPTS[@]}") # OPTS is now available if we want to remove the -n (dry run) added next
+RSYNCOPTS+=('-n') # dry-run default
 FILTEREXT=''
 while getopts “hca” OPTION
 do
@@ -52,7 +63,7 @@ do
              exit 1
              ;;
          c)
-             ARGOPTS=''
+             RSYNCOPTS=("${OPTS[@]}") # remove the -n dry run - revert to $OPTS array
              INFO_MSG=''
              ;;
          a)
@@ -73,17 +84,35 @@ echo $INFO_MSG
 #     exit 1
 #fi
 
-FILTERS=${FILTER_BASE}${FILTEREXT}.txt
+FILTERS="${FILTER_BASE}${FILTEREXT}.txt"
 
 # rsync options ref.
 # -n Don't do any copying, but display what rsync *would* copy. For testing.
-# -a Archive. Mainly propogate file permissions, ownership, timestamp, etc.
+# -i, --itemize-changes       output a change-summary for all updates (repeat this to list all files. -a includes -i [riptgoD])
 # -u Update. Don't copy file if file on destination is newer.
+# -a Archive. Mainly propogate file permissions, ownership, timestamp, etc.
+# [-a means -riptgoD, to ignore permissions, owner, group changes try -ritD ]
 # -v Verbose -vv More verbose. -vvv Even more verbose.
 # -K --keep-dirlinks         treat symlinked dir on receiver as dir [avoids destroying root subdomain symlink on Vidahost]
+# --stats                 give some file-transfer stats
+# --progress
+# --size-only
+# --checksum
+# --info=BACKUP,COPY,DEL,NAME,REMOVE,STAT,SYMSAFE [server may not support these flags if < 3.1.0]
 # See man rsync for other options.
 
-OPTS="$ARGOPTS -i -u -a -K --rsh=ssh --stats --progress $EXTRA_FLAGS"
+# checksum only:
+#OPTS="$ARGOPTS -u -riD -K --rsh=ssh --stats --checksum"
+# time stamp only:
+#OPTS="$ARGOPTS -u -ritD -K --rsh=ssh --stats"
+
+RSYNCOPTS+=(-u -riD -K --stats --checksum --delete)
+
+RSYNCOPTS+=({{rsync.EXTRA_FLAGS_OUTGOING}})
+
+RSYNCOPTS+=("--filter=. $FILTERS")
+
+
 
 # May be needed if run by cron?
 export PATH=$PATH:/bin:/usr/bin:/usr/local/bin
@@ -91,10 +120,12 @@ export PATH=$PATH:/bin:/usr/bin:/usr/local/bin
 # Only run rsync if $DEST responds.
 VAR=`ping -s 1 -c 1 $DEST > /dev/null; echo $?`
 if [ $VAR -eq 0 ]; then
-	echo "running rsync $OPTS --filter='. $FILTERS' $BACKDIR $USER@$DEST:$DESTDIR"
-    rsync $OPTS --filter=". $FILTERS" $BACKDIR $USER@$DEST:$DESTDIR
+    echo "=====RUNNING RSYNC:======"
+    echo rsync "${RSYNCOPTS[@]}" "$BACKDIR" "$USER@$DEST:$DESTDIR"
+    echo "========================="
+    rsync "${RSYNCOPTS[@]}" "$BACKDIR" "$USER@$DEST:$DESTDIR"
 else
-    echo "Cannot connect to $DEST."
+    echo "Cannot ping $DEST."
 fi
 
 echo "_______________________________"
